@@ -1,0 +1,28 @@
+
+####
+# Apache
+apache_vhost:
+  - { vhost: 'c1.abcproject.xyz', docroot: 'p16033-abcproject-c1' }
+  - { vhost: 'a1.abcproject.xyz', docroot: 'p16030-abcproject-a1' }
+  - { vhost: 'b1.abcproject.xyz', docroot: 'p16031-abcproject-b1' }
+  - { vhost: 'b2.abcproject.xyz', docroot: 'p16032-abcproject-b2' }
+
+apache_vhost_https:
+  - { vhost: 'a1.abcproject.xyz', vhost_name: 'ssl.a1.abcproject.xyz',  docroot: 'p16030-abcproject-a1', crt_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.crt', crt_name: 'a1.abcproject.xyz.crt', key_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.key', key_name: 'a1.abcproject.xyz.key' }
+
+
+####
+# mysql
+mysql_db:
+  - { name: 'a1_db' }
+  - { name: 'c1_db' }
+
+
+mysql_root_password: root
+mysql_root_password_update: yes
+mysql_enabled_on_startup: yes
+mysql_replication_user: {name: 'replication', password: 'secret'}
+mysql_databases:
+  - name: mycompany_database
+    collation: utf8_general_ci
+    encoding: utf8

@@ -1,0 +1,53 @@
+---
+- hosts: web-server
+  become: yes
+
+  vars_files:
+    # Contains variables an settings required for installing the environement
+    - vars/settings.yml
+    # Contains configuration to deploy on the machine such as Apache vhost, mysql databases...
+    - vars/configuration.yml
+
+
+  tasks:
+
+
+    #get_url: url=http://example.com/path/file.conf dest=/etc/foo.conf force_basic_auth=yes
+
+  - name: Create directory
+    action: file path=/etc/apache2/ssl/ state=directory mode=0777 recurse=yes
+
+  - name: Download COMODORSADomainValidationSecureServerCA files
+    get_url: url='https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/COMODORSADomainValidationSecureServerCA.crt' dest=/etc/apache2/ssl/COMODORSADomainValidationSecureServerCA.crt force_basic_auth=yes
+    with_items: apache_vhost_https
+    when: apache_vhost_https
+    tags: apache
+
+  - name: Download certificates files
+    get_url: url={{ item.crt_url }} dest=/etc/apache2/ssl/{{ item.crt_name }} force_basic_auth=yes
+    with_items: apache_vhost_https
+    when: apache_vhost_https
+    tags: apache
+
+  - name: Download key files
+    get_url: url={{ item.key_url }} dest=/etc/apache2/ssl/{{ item.key_name }} force_basic_auth=yes
+    with_items: apache_vhost_https
+    when: apache_vhost_https
+    tags: apache
+
+
+  - name: Apache | Create HTTPS Apache vhosts
+    template: src=templates/apache2-virtualhost-https.j2 dest=/etc/apache2/sites-available/{{ item.vhost_name }}.conf owner=root mode=0744
+    with_items: apache_vhost_https
+    when: apache_vhost_https
+    tags: apache
+
+  - name: Apache | Enable Apache vhosts
+    command: /usr/sbin/a2ensite {{ item.vhost_name }}.conf
+    with_items: apache_vhost_https
+    when: apache_vhost_https
+    tags: apache
+
+  - name: Restart Apache
+    action: service name=apache2 state=restarted
+    tags: apache

@@ -1,0 +1,256 @@
+##
+# Ansible playbook for setting up a LAMP development server on Ubuntu 12.04.
+#
+
+---
+- hosts: all
+  become: yes
+
+  tasks:
+
+    ##
+    # Update the box and install common softwares.
+    #
+    - name: Common | Install 'python-apt' module
+      apt: pkg=python-apt state=present
+      tags: common
+
+    - name: Common | Upgrade all packages
+      apt: upgrade=yes update_cache=yes
+      tags: common
+
+    - name: Common | Install the locales package
+      apt: pkg=locales state=present
+
+    ##
+    # Installs NTP.
+    #
+    - name: Common | Install NTP
+      apt: pkg={{ item }} state=present
+      with_items:
+        - ntp
+        - ntpdate
+      tags: common
+
+    - name: Common | Install ntp.conf
+      copy: src=templates/ntp.conf dest=/etc/ntp.conf owner=root group=root mode=0644
+      tags: common
+
+    - name: Restart NTP
+      action: service name=ntp state=restarted
+      tags: common
+
+
+- hosts: web-server
+  become: yes
+
+  vars_files:
+    # Contains variables an settings required for installing the environement
+    - vars/settings.yml
+    # Contains configuration to deploy on the machine such as Apache vhost, mysql databases...
+    - vars/configuration.yml
+
+  tasks:
+
+    ##
+    # Update the box and install common softwares.
+    #
+    - name: Common | Install 'python-apt' module
+      apt: pkg=python-apt state=present
+      tags: common
+
+    - name: Common | Upgrade all packages
+      apt: upgrade=yes update_cache=yes
+      tags: common
+
+    - name: Common | Install the locales package
+      apt: pkg=locales state=present
+
+    ##
+    # Installs NTP.
+    #
+    - name: Common | Install NTP
+      apt: pkg={{ item }} state=present
+      with_items:
+        - ntp
+        - ntpdate
+      tags: common
+
+    - name: Common | Install ntp.conf
+      copy: src=templates/ntp.conf dest=/etc/ntp.conf owner=root group=root mode=0644
+      tags: common
+
+    ##
+    # Installation of common software.
+    #
+    - name: Common | Install misc utils.
+      apt: pkg={{ item }} state=installed force=yes
+      tags: common
+      with_items:
+        - htop
+        - curl
+        - python-software-properties
+        - python-pycurl
+        - software-properties-common
+        - unzip
+        - vim
+
+    ##
+    # Python setup
+    #
+    - name: Common | Install misc utils.
+      apt: pkg={{ item }} state=installed force=yes
+      tags: common
+      with_items:
+        - python-software-properties
+        - python-pycurl
+        - python-mysqldb
+
+
+    ##
+    # GIT Setup.
+    #
+    - name: Git | Install git base packages
+      apt: pkg=git-core state=installed force=yes
+      tags: common
+
+
+    ##
+    # Apache2 setup.
+    #
+    - name: Apache | Install required packages.
+      apt: pkg=apache2 state=latest force=yes
+      tags: apache
+
+    - name: Apache | Configuration file for our site
+      action: template src=templates/apache2-default-virtualhost.j2 dest=/etc/apache2/sites-available/default
+      tags: apache
+
+    - name: Apache | Enable module | Enable $module
+      command: a2enmod {{ item }} creates=/etc/apache2/mods-enabled/$apache_modules.load
+      tags: apache
+      with_items:
+        - rewrite
+        - vhost_alias
+        - headers
+        - expires
+        - filter
+        - ssl
+
+
+    - name: Apache | Remove default Apache vhosts
+      file: path=/etc/apache2/sites-enabled/000-default.conf state=absent
+      tags: apache
+
+    #- name: Apache | Remove sites-enabled
+    #  file: path=/etc/apache2/sites-enabled/ state=absent
+    #  tags: apache
+
+    - name: Apache | Create sites-enabled
+      file: path=/etc/apache2/sites-enabled/ state=directory
+      tags: apache
+
+    - name: Apache | Create Apache vhosts document root
+      file: path={{apache_root }}/{{ item.docroot }} state=directory force=no mode=0775
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Create Apache vhosts
+      template: src=templates/apache2-virtualhost.j2 dest=/etc/apache2/sites-available/{{ item.vhost }}.conf owner=root mode=0744
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Create HTTPS Apache vhosts
+      template: src=templates/apache2-virtualhost.j2 dest=/etc/apache2/sites-available/{{ item.vhost }}.conf owner=root mode=0744
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Enable Apache vhosts
+      command: /usr/sbin/a2ensite {{ item.vhost }}.conf
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Composer install Apache vhosts
+      action: composer  command=install working_dir={{apache_root }}/{{ item.docroot }}/
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Change directory permission
+      action: file path={{ item }} state=directory mode=0777 recurse=yes
+      with_items:
+        - /var/www/p16030-abcproject-a1/var/logs/
+        - /var/www/p16030-abcproject-a1/var/cache/
+        - /var/www/p16030-abcproject-a1/var/cachequery/
+        - /var/www/p16030-abcproject-a1/var/cacheviews/
+        - /var/www/p16030-abcproject-a1/var/volt/
+      tags: chmod
+
+    - name: Restart Apache
+      action: service name=apache2 state=restarted
+      tags: apache
+
+    ##
+    # PHP Setup.
+    #
+    - name: PHP | Install required packages.
+      apt: pkg={{ item }} state=installed force=yes
+      tags: common
+      with_items:
+        - php5
+        - php-apc
+        - php5-cli
+        - php5-common
+        - php5-curl
+        - php5-dev
+        - php5-gd
+        - php5-mysql
+        - php5-xdebug
+        - php5-xmlrpc
+        - php5-gd
+        - php5-intl
+        - libapache2-mod-php5
+        - libpcre3-dev
+
+    - name: PHP | PHP Apache2 configuration
+      action: template src=templates/php5-apache2-php-ini.j2 dest=/etc/php5/apache2/php.ini
+      tags: php
+
+    - name: PHP | PHP CLI configuration
+      action: template src=templates/php5-cli-php-ini.j2 dest=/etc/php5/cli/php.ini
+      tags: php
+
+    - name: PHP | XDebug configuration
+      action: template src=templates/php-xdebug.j2 dest=/etc/php5/mods-available/xdebug.ini
+      tags: php
+
+
+    ##
+    # Composer
+    #
+    - name: Php | Install composer
+      tags: common
+      shell: curl -sS https://getcomposer.org/installer | /usr/bin/php && /bin/mv -f /home/ducvu/composer.phar /usr/local/bin/composer creates=/usr/local/bin/composer
+
+    ##
+    # PHP Setup.
+    #
+    - name: Add Phalcon PHP Framework PPA repository
+      apt_repository: repo='ppa:phalcon/stable'
+      tags: phalcon
+
+    - name: Update APT cache
+      apt: update_cache=true
+      tags: phalcon
+
+    - name: Install Phalcon PHP Framework
+      apt: pkg=php5-phalcon state=installed
+      tags: phalcon
+
+    - name: Restart Apache
+      action: service name=apache2 state=restarted
+      tags: phalcon

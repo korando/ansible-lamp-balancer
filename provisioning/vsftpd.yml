@@ -1,0 +1,43 @@
+---
+
+- hosts: web-server
+  become: yes
+
+  vars:
+    # vsftpd
+    vsftpd_anonymous_enable: 'NO'
+    vsftpd_local_enable: 'YES'
+    vsftpd_write_enable: 'YES'
+    vsftpd_local_umask: '002'
+    # created with:
+    # python -c "from passlib.hash import sha512_crypt; import getpass; print sha512_crypt.encrypt(getpass.getpass())"
+    password : $6$rounds=656000$VX.yM.67xxmiKyGa$YVqPe2eFIH10mAbATq9vo93PzAWuExexgyECQfqpZVRy3JMF0JZMy8qbHRcA17V21O0hZIf1YScaUIIn8/Yht0
+    user : ftp-u
+
+  tasks:
+  ##
+   # FTP server setup.
+   #
+     - name: FTP | vsftpd daemon package
+       action: apt pkg=vsftpd state=installed
+       tags: ftp
+
+     - name: FTP | Configuration setup
+       action: template src=templates/etc-vsftpd-conf.j2 dest=/etc/vsftpd.conf
+       tags: ftp
+
+     - name: Create FTP user group
+       action: group name=ftp-users state=present system=yes
+       tags: ftp
+
+     - name: Chmod /var/www folder
+       action: file path=/var/www state=directory owner=root group=ftp-users mode=0775 recurse=yes
+       tags: ftp
+
+     - name: Create user
+       action: user name={{ user }} password={{ password }} update_password=always group=ftp-users home=/var/www shell=/bin/bash
+       tags: ftp
+
+     - name: Restart vsftpd
+       action: service name=vsftpd state=restarted
+       tags: ftp

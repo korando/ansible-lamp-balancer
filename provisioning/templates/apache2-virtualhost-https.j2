@@ -1,0 +1,26 @@
+##
+# Ansible provided setup.
+##
+<VirtualHost *:443>
+  ServerName {{ item.vhost }}
+  ServerAdmin webmaster@{{ item.vhost }}
+  ServerAlias www.{{ item.vhost }}
+
+  DocumentRoot {{ apache_root}}/{{ item.docroot }}
+  <Directory {{ apache_root}}/{{ item.docroot }}>
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride All
+    Require all granted
+  </Directory>
+
+  SSLEngine on
+  SSLCertificateFile /etc/apache2/ssl/{{ item.crt_name }}
+  SSLCertificateKeyFile /etc/apache2/ssl/{{ item.key_name }}
+  SSLCertificateChainFile /etc/apache2/ssl/COMODORSADomainValidationSecureServerCA.crt
+
+
+  CustomLog ${APACHE_LOG_DIR}/access_{{ item.vhost }}.log combined
+  ErrorLog ${APACHE_LOG_DIR}/error_{{ item.vhost }}.log
+  LogLevel warn
+  ServerSignature Off
+</VirtualHost>
