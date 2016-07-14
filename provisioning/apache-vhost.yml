@@ -1,0 +1,79 @@
+##
+# Ansible playbook for setting up a LAMP development server on Ubuntu 12.04.
+#
+
+---
+- hosts: web-server
+  become: yes
+
+  vars_files:
+    # Contains variables an settings required for installing the environement
+    - vars/settings.yml
+    # Contains configuration to deploy on the machine such as Apache vhost, mysql databases...
+    - vars/configuration.yml
+
+  tasks:
+
+    - name: Apache | Remove default Apache vhosts
+      file: path=/etc/apache2/sites-enabled/000-default.conf state=absent
+      tags: apache
+
+    #- name: Apache | Remove sites-enabled
+    #  file: path=/etc/apache2/sites-enabled/ state=absent
+    #  tags: apache
+
+    - name: Apache | Create sites-enabled
+      file: path=/etc/apache2/sites-enabled/ state=directory
+      tags: apache
+
+    - name: Apache | Create Apache vhosts document root
+      file: path={{apache_root }}/{{ item.docroot }} state=directory force=no mode=0775
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Create Apache vhosts
+      template: src=templates/apache2-virtualhost.j2 dest=/etc/apache2/sites-available/{{ item.vhost }}.conf owner=root mode=0744
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Create HTTPS Apache vhosts
+      template: src=templates/apache2-virtualhost.j2 dest=/etc/apache2/sites-available/{{ item.vhost }}.conf owner=root mode=0744
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    - name: Apache | Enable Apache vhosts
+      command: /usr/sbin/a2ensite {{ item.vhost }}.conf
+      with_items: apache_vhost
+      when: apache_vhost
+      tags: apache
+
+    # - name: Composer install Apache vhosts
+    #   action: composer  command=install working_dir={{apache_root }}/{{ item.docroot }}/
+    #   with_items: apache_vhost
+    #   when: apache_vhost
+    #   tags: apache
+    #
+    # - name: Composer update Apache vhosts
+    #   action: composer  command=update working_dir={{apache_root }}/{{ item.docroot }}/
+    #   with_items: apache_vhost
+    #   when: apache_vhost
+    #   tags: composer_update
+
+    # - name: Change directory permission
+    #   action: file path={{ item }} state=directory mode=0777 recurse=yes
+    #   with_items:
+    #     - /var/www/p16030-abcproject-a1/var/logs/
+    #     - /var/www/p16030-abcproject-a1/var/cache/
+    #     - /var/www/p16030-abcproject-a1/var/cachequery/
+    #     - /var/www/p16030-abcproject-a1/var/cacheviews/
+    #     - /var/www/p16030-abcproject-a1/var/volt/
+    #   tags: chmod
+
+    - name: Restart Apache
+      action: service name=apache2 state=restarted
+      tags: apache
+
+  

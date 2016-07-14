@@ -2,27 +2,34 @@
 ####
 # Apache
 apache_vhost:
-  - { vhost: 'c1.abcproject.xyz', docroot: 'p16033-abcproject-c1' }
-  - { vhost: 'a1.abcproject.xyz', docroot: 'p16030-abcproject-a1' }
-  - { vhost: 'b1.abcproject.xyz', docroot: 'p16031-abcproject-b1' }
-  - { vhost: 'b2.abcproject.xyz', docroot: 'p16032-abcproject-b2' }
+  - { vhost: 'demo1.dsquare.com.vn', docroot: 'demo1.dsquare.com.vn' }
+#  - { vhost: 'a1.abcproject.xyz', docroot: 'p16030-abcproject-a1' }
+#  - { vhost: 'b1.abcproject.xyz', docroot: 'p16031-abcproject-b1' }
+#  - { vhost: 'b2.abcproject.xyz', docroot: 'p16032-abcproject-b2' }
 
-apache_vhost_https:
-  - { vhost: 'a1.abcproject.xyz', vhost_name: 'ssl.a1.abcproject.xyz',  docroot: 'p16030-abcproject-a1', crt_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.crt', crt_name: 'a1.abcproject.xyz.crt', key_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.key', key_name: 'a1.abcproject.xyz.key' }
-
+#apache_vhost_https:
+#  - { vhost: 'a1.abcproject.xyz', vhost_name: 'ssl.a1.abcproject.xyz',  docroot: 'p16030-abcproject-a1', crt_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.crt', crt_name: 'a1.abcproject.xyz.crt', key_url: 'https://dl.dropboxusercontent.com/u/35274507/SSL/a1_abcproject_xyz/a1.abcproject.xyz.key', key_name: 'a1.abcproject.xyz.key' }
 
 ####
 # mysql
-mysql_db:
-  - { name: 'a1_db' }
-  - { name: 'c1_db' }
-
-
 mysql_root_password: root
 mysql_root_password_update: yes
 mysql_enabled_on_startup: yes
-mysql_replication_user: {name: 'replication', password: 'secret'}
+#mysql_replication_user: {name: 'replication', password: 'secret'}
 mysql_databases:
   - name: mycompany_database
     collation: utf8_general_ci
     encoding: utf8
+
+
+####
+# vsftpd
+vsftpd_anonymous_enable: 'NO'
+vsftpd_local_enable: 'YES'
+vsftpd_write_enable: 'YES'
+vsftpd_local_umask: '002'
+
+# created with:
+# python -c "from passlib.hash import sha512_crypt; import getpass; print sha512_crypt.encrypt(getpass.getpass())"
+vsftpd_user:
+  - { ftp_user : 'ftp-u1',  ftp_password : '$6$rounds=656000$QLYRbr/QuyZ93i8R$jCcpk3ElAQ7gqI4YdQ70D8FN3g.Kqh84fZgQVktH851IYG59sSlXvcXzFnE4.UVk2.AmwNsxHM2NBKec5V/KN0' }

@@ -3,16 +3,11 @@
 - hosts: web-server
   become: yes
 
-  vars:
-    # vsftpd
-    vsftpd_anonymous_enable: 'NO'
-    vsftpd_local_enable: 'YES'
-    vsftpd_write_enable: 'YES'
-    vsftpd_local_umask: '002'
-    # created with:
-    # python -c "from passlib.hash import sha512_crypt; import getpass; print sha512_crypt.encrypt(getpass.getpass())"
-    password : $6$rounds=656000$VX.yM.67xxmiKyGa$YVqPe2eFIH10mAbATq9vo93PzAWuExexgyECQfqpZVRy3JMF0JZMy8qbHRcA17V21O0hZIf1YScaUIIn8/Yht0
-    user : ftp-u
+  vars_files:
+    # Contains variables an settings required for installing the environement
+    - vars/settings.yml
+    # Contains configuration to deploy on the machine such as Apache vhost, mysql databases...
+    - vars/configuration.yml
 
   tasks:
   ##
@@ -35,8 +30,19 @@
        tags: ftp
 
      - name: Create user
-       action: user name={{ user }} password={{ password }} update_password=always group=ftp-users home=/var/www shell=/bin/bash
+       action: user name={{ item.ftp_user }} password={{ item.ftp_password }} update_password=always group=ftp-users home=/var/www shell=/bin/bash
+       with_items: vsftpd_user
+       when: vsftpd_user
        tags: ftp
+
+     ##
+     # TODO  chown ftp-u:ftp-users /var/www
+     #
+     - name: Change directory permission
+       action: file path={{ item }} state=directory group=ftp-users owner=ftp-u1 mode=0775 recurse=yes
+       with_items:
+         - /var/www/
+       tags: chmod
 
      - name: Restart vsftpd
        action: service name=vsftpd state=restarted

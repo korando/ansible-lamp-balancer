@@ -1,0 +1,9 @@
+---
+- hosts: all
+  sudo: yes
+  roles:
+    - franklinkim.newrelic
+  vars:
+    newrelic_license_key: yes
+    newrelic_service_state: started
+    newrelic_license_key: 780d61347cee1ae0bf4e80d1ec13722df6c3bcdd

@@ -14,11 +14,11 @@
             host: "{{ groups['web-server'][0] }}"
             password: secret
             priv: "*.*:SELECT"
-          - name: mycompany_user
-            host: "{{ groups['web-server'][1] }}"
-            password: secret
-            priv: "*.*:SELECT"
-        mysql_replication_master: "{{ groups['db-server'][0] }}"
+          # - name: mycompany_user
+          #   host: "{{ groups['web-server'][1] }}"
+          #   password: secret
+          #   priv: "*.*:SELECT"
+        #mysql_replication_master: "{{ groups['db-server'][0] }}"
 
   roles:
     - geerlingguy.mysql

@@ -1,0 +1,25 @@
+---
+#- hosts: all
+#  sudo: yes
+#  roles:
+#    - franklinkim.newrelic
+#  vars:
+#    newrelic_license_key: yes
+#    newrelic_service_state: started
+#    newrelic_license_key: 780d61347cee1ae0bf4e80d1ec13722df6c3bcdd
+- hosts: web-server
+  sudo: yes
+  roles:
+    - ricbra.logentries
+  vars:
+    logentries_account_key: ff22d28f-31ab-4586-a512-18b3d049d0e2
+    logentries_hostname: ABC
+    logentries_logs:
+      - name: "ABC-A1"
+        path: "/var/log/apache2/error_a1.abcproject.xyz.log"
+      - name: "ABC-B1"
+        path: "/var/log/apache2/error_b1.abcproject.xyz.log"
+      - name: "ABC-B2"
+        path: "/var/log/apache2/error_b2.abcproject.xyz.log"
+      - name: "ABC-C1"
+        path: "/var/log/apache2/error_c1.abcproject.xyz.log"
